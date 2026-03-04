@@ -98,7 +98,7 @@ make
 ## Requirements
 
 - GCC with C99 support (MSYS2 / MinGW64 recommended on Windows)
-- No external libraries — standard C library only
+- No external libraries - standard C library only
 
 ---
 
