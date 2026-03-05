@@ -9,7 +9,7 @@ Final project for Advanced C Programming
 EasyCharge is a console-based management system for electric vehicle charging stations. Each station contains multiple charging ports (Fast / Mid / Slow), and vehicles can start charging, join a waiting queue, and stop charging with automatic payment calculation. All data is persisted to CSV files and updated after every operation.
 
 ---
-
+ 
 ## Data Structures
 
 | Structure | Usage |
