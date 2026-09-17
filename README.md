@@ -18,6 +18,27 @@ EasyCharge is a console-based management system for electric vehicle charging st
 | Linked List | Port list per station |
 | Queue | Waiting queue per station |
 
+### Complexity, and the trap in it
+
+The trees are plain unbalanced BSTs, so id lookup is O(log n) on a
+well-shaped tree and O(n) on a degenerate one. That distinction is not
+academic here: `updateFiles()` writes the station rows with an in-order
+traversal, so `Stations.txt` comes back sorted by id after every run. Reading
+those rows straight back in insertion order builds a right-leaning chain, and
+the tree collapses into a linked list.
+
+`loadFiles()` therefore buffers the rows, sorts them, and inserts median-first,
+which gives a height-balanced tree no matter how the file is ordered. With the
+six stations shipped here that is the difference between height 6 and height 3.
+
+| Operation | Complexity |
+|-----------|------------|
+| Station lookup by id | O(log n), balanced at load time |
+| Car lookup by license plate | O(log n) average, O(n) worst case; cars are inserted in file order and not rebalanced |
+| Nearest station by coordinates | O(n) - full traversal, no spatial index |
+| Station lookup by name | O(n) - full traversal, the tree is not keyed by name |
+| Port operations within a station | O(p) in that station's port count |
+
 ---
 
 ## Project Structure
@@ -33,13 +54,14 @@ EasyCharge/
 │   ├── file_io.c/h      – File load/save (CSV)
 │   ├── menu_ops.c/h     – Menu operations
 │   └── main.c           – Entry point
-├── Stations.txt          – Station data
-├── Ports.txt             – Port data
-├── Cars.txt              – Vehicle data
-├── LineOfCars.txt        – Queue data
+├── Stations.txt              – Station data
+├── Ports.txt                 – Port data
+├── Cars.txt                  – Vehicle data
+├── LineOfCars.txt            – Queue data
+├── Data_Structures_Diagram.pdf
 ├── Makefile
-├── compile.bat           – Windows build script
-└── run.bat               – Windows run script
+├── compile.bat               – Windows build script
+└── run.bat                   – Windows run script
 ```
 
 ---

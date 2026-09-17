@@ -37,6 +37,39 @@ static const char *portTypeToStr(PortType t) {
     return "SLOW";
 }
 
+/* ---- Balanced bulk-load of Stations.txt ----
+ *
+ * updateFiles() writes the station rows with an in-order traversal, so
+ * Stations.txt is always sorted by id on disk. Feeding those rows straight
+ * into insertStation() would therefore build a right-leaning chain and turn
+ * every id lookup into O(n). The rows are buffered, sorted, and inserted
+ * median-first instead, so the tree is height-balanced no matter what order
+ * the file happens to be in.
+ */
+
+typedef struct {
+    int    id;
+    char   name[MAX_NAME_LEN];
+    int    nPorts;
+    double x, y;
+} StationRow;
+
+static int cmpStationRow(const void *a, const void *b) {
+    int ia = ((const StationRow *)a)->id;
+    int ib = ((const StationRow *)b)->id;
+    return (ia > ib) - (ia < ib);
+}
+
+static void insertBalanced(StationBST *bst, const StationRow *rows, int lo, int hi) {
+    int mid;
+    if (lo > hi) return;
+    mid = lo + (hi - lo) / 2;
+    insertStation(bst, rows[mid].id, rows[mid].name,
+                  rows[mid].nPorts, rows[mid].x, rows[mid].y);
+    insertBalanced(bst, rows, lo, mid - 1);
+    insertBalanced(bst, rows, mid + 1, hi);
+}
+
 /* =========================================================
  * loadFiles
  * ========================================================= */
@@ -48,15 +81,40 @@ int loadFiles(StationBST *stations, CarBST *cars) {
     fp = fopen(FILE_STATIONS, "r");
     if (!fp) { fprintf(stderr, "Error: cannot open %s\n", FILE_STATIONS); return 0; }
 
-    fgets(line, sizeof(line), fp); /* skip header */
-    while (fgets(line, sizeof(line), fp)) {
-        int    id, nPorts;
-        char   name[MAX_NAME_LEN];
-        double x, y;
-        if (sscanf(line, "%d,%63[^,],%d,%lf,%lf", &id, name, &nPorts, &x, &y) == 5)
-            insertStation(stations, id, name, nPorts, x, y);
+    {
+        StationRow *rows  = NULL;
+        int         count = 0;
+        int         cap   = 0;
+
+        fgets(line, sizeof(line), fp); /* skip header */
+        while (fgets(line, sizeof(line), fp)) {
+            StationRow r;
+            if (sscanf(line, "%d,%63[^,],%d,%lf,%lf",
+                       &r.id, r.name, &r.nPorts, &r.x, &r.y) != 5)
+                continue;
+
+            if (count == cap) {
+                StationRow *grown;
+                cap   = cap ? cap * 2 : 16;
+                grown = (StationRow *)realloc(rows, (size_t)cap * sizeof(StationRow));
+                if (!grown) {
+                    fprintf(stderr, "Error: out of memory reading %s\n", FILE_STATIONS);
+                    free(rows);
+                    fclose(fp);
+                    return 0;
+                }
+                rows = grown;
+            }
+            rows[count++] = r;
+        }
+        fclose(fp);
+
+        if (count > 0) {
+            qsort(rows, (size_t)count, sizeof(StationRow), cmpStationRow);
+            insertBalanced(stations, rows, 0, count - 1);
+        }
+        free(rows);
     }
-    fclose(fp);
 
     /* --- 2. Ports.txt (first pass: create Port nodes, skip car link) --- */
     fp = fopen(FILE_PORTS, "r");

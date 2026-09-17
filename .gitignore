@@ -44,5 +44,6 @@ desktop.ini
 # Dependency files
 *.d
 
-# Claude Code internal
+# Local editor / tooling state
+.vscode/
 .claude/
