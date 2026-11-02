@@ -44,6 +44,50 @@ desktop.ini
 # Dependency files
 *.d
 
-# Local editor / tooling state
-.vscode/
+# Claude Code internal
 .claude/
+
+# --- sync template: deps / builds
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+.next/
+dist/
+build/
+.cache/
+.pytest_cache/
+.vercel/
+# --- secrets (never in git; copy by hand to the other machine)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+token*.json
+# --- heavy data / media (stays on the runner PC)
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.wav
+*.mp3
+*.pkl
+*.parquet
+*.zst
+*.feather
+*.h5
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.log
+logs/
+# --- per machine
+.claude/settings.local.json
+.DS_Store
+Thumbs.db
+desktop.ini
